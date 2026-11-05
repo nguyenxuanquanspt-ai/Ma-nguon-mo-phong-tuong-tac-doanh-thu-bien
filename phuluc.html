@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Phỏng Tương Tác: Tốc Độ Thay Đổi Trung Bình Doanh Thu & Doanh Thu Biên</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX for rendering mathematical expressions -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-900 text-white py-6 px-4 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 bg-indigo-800 text-indigo-200 text-xs font-semibold px-2.5 py-1 rounded-full mb-2">
+                    <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+                    Ứng dụng Đại số & Giải tích trong Kinh tế
+                </div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight">
+                    Khám Phá Doanh Thu $R(x)$ & Doanh Thu Biên $R'(x)$
+                </h1>
+                <p class="text-indigo-200 text-sm mt-1">
+                    Liên hệ giữa tốc độ thay đổi trung bình $\frac{R(x+h) - R(x)}{h}$ và đạo hàm $R'(x) = -0.01x + 19$
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3">
+                <div class="flex items-center gap-2 bg-indigo-800/80 backdrop-blur border border-indigo-700/50 p-2.5 rounded-xl">
+                    <i data-lucide="trending-up" class="w-7 h-7 text-emerald-400"></i>
+                    <div class="text-xs">
+                        <div class="text-indigo-200">Hàm Doanh Thu $R(x)$</div>
+                        <div class="font-mono font-bold text-sm text-white">$R(x) = -0.005x^2 + 19x$</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 bg-purple-900/80 backdrop-blur border border-purple-700/50 p-2.5 rounded-xl">
+                    <i data-lucide="zap" class="w-7 h-7 text-purple-300"></i>
+                    <div class="text-xs">
+                        <div class="text-purple-200">Doanh Thu Biên $R'(x)$</div>
+                        <div class="font-mono font-bold text-sm text-white">$R'(x) = 19 - 0.01x$</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Control Sidebar (Left) -->
+        <div class="lg:col-span-4 flex flex-col gap-5">
+            
+            <!-- Interactive Parameter Controls -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-indigo-600"></i>
+                        Điều Chỉnh Tham Số
+                    </h2>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono">x & h</span>
+                </div>
+
+                <!-- Live Coordinate Monitor Card -->
+                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-3.5 rounded-xl border border-indigo-100/80 space-y-2">
+                    <div class="text-xs font-semibold text-slate-600 flex items-center justify-between">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="crosshair" class="w-3.5 h-3.5 text-indigo-600"></i>
+                            Tọa độ đồng bộ tại $x$:
+                        </span>
+                        <span class="text-[11px] text-indigo-600 italic">💡 Kéo trên đồ thị để đổi $x$</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-white p-2 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-400 uppercase font-semibold">Sản lượng x</div>
+                            <div id="hud-x" class="font-mono font-bold text-indigo-600 text-sm">500</div>
+                        </div>
+                        <div class="bg-white p-2 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-400 uppercase font-semibold">Doanh thu R(x)</div>
+                            <div id="hud-rx" class="font-mono font-bold text-emerald-600 text-sm">8,250</div>
+                        </div>
+                        <div class="bg-white p-2 rounded-lg border border-slate-200">
+                            <div class="text-[10px] text-slate-400 uppercase font-semibold">Đạo hàm R'(x)</div>
+                            <div id="hud-rprime" class="font-mono font-bold text-purple-600 text-sm">14.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slider x -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                            Sản lượng ban đầu $x$:
+                        </label>
+                        <span id="val-x" class="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-sm">
+                            500
+                        </span>
+                    </div>
+                    <input type="range" id="slider-x" min="100" max="2800" step="10" value="500" 
+                        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                    <div class="flex justify-between text-xs text-slate-400 mt-1">
+                        <span>100 sp</span>
+                        <span>2800 sp</span>
+                    </div>
+                </div>
+
+                <!-- Slider h + Auto Play Button -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                            Mức tăng sản lượng $h$ ($\Delta x$):
+                        </label>
+                        <span id="val-h" class="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-sm">
+                            200
+                        </span>
+                    </div>
+                    <input type="range" id="slider-h" min="1" max="1000" step="1" value="200" 
+                        class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
+                    <div class="flex justify-between text-xs text-slate-400 mt-1">
+                        <span>1 sp</span>
+                        <span>1000 sp</span>
+                    </div>
+
+                    <!-- Auto Play Button for h -->
+                    <button id="btn-play-h" class="mt-3 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                        <i data-lucide="play" id="icon-play-h" class="w-4 h-4"></i>
+                        <span id="label-play-h">Tự động chạy $h$ (1 đến 1000)</span>
+                    </button>
+                </div>
+
+                <!-- Graphic Options Toggles -->
+                <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Tùy chọn hiển thị đồ thị:</span>
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="chk-show-rprime" checked class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4">
+                        Hiển thị Đồ thị Doanh Thu Biên $R'(x)$ bên dưới
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="chk-secant" checked class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        Hiển thị Đường Cát Tuyến (Độ dốc = Tốc độ TB)
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="chk-triangle" checked class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        Hiển thị Tam Giác Biến Thiên ($\Delta x, \Delta R$)
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="chk-tangent" checked class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                        Hiển thị Tiếp Tuyến tại $x$ (Độ dốc = $R'(x)$)
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Visualization Hub (Right) -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+            
+            <!-- Dual Canvas Plot Card -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col relative">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                    <div>
+                        <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-5 h-5 text-indigo-600"></i>
+                            Đồ Thị Đồng Bộ $R(x)$ & Doanh Thu Biên $R'(x)$
+                        </h2>
+                        <p class="text-xs text-slate-500">
+                            Di chuyển điểm trên đồ thị $R'(x)$ hoặc $R(x)$ để quan sát mối liên hệ tức thời giữa doanh thu và đạo hàm.
+                        </p>
+                    </div>
+                    <!-- Live Slope Badge -->
+                    <div class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 shadow-sm shrink-0">
+                        <span>Độ dốc cát tuyến $k = $</span>
+                        <span id="badge-slope" class="font-mono text-sm font-bold text-yellow-300">13.00</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic HTML5 Canvas -->
+                <div class="relative w-full aspect-[16/11] sm:aspect-[16/10] bg-white rounded-xl overflow-hidden border border-slate-200 shadow-inner">
+                    <canvas id="graph-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+                    <div id="canvas-tooltip" class="absolute pointer-events-none hidden bg-slate-800/95 text-white text-xs p-2.5 rounded-lg border border-slate-700 shadow-xl backdrop-blur font-mono z-10"></div>
+                </div>
+
+                <!-- Legend & Interactive Hints -->
+                <div class="flex flex-wrap items-center justify-between text-xs text-slate-600 mt-3 pt-3 border-t border-slate-100 gap-2">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span>
+                            <span>Đường $R(x)$</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-purple-600 inline-block"></span>
+                            <span>Đường $R'(x)$</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-0.5 bg-emerald-600 inline-block"></span>
+                            <span>Cát tuyến $AB$</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-0.5 border-b border-dashed border-purple-500 inline-block"></span>
+                            <span>Tiếp tuyến $R'(x)$</span>
+                        </div>
+                    </div>
+                    <div class="text-indigo-600 font-medium text-[11px] flex items-center gap-1">
+                        <i data-lucide="hand" class="w-3.5 h-3.5"></i>
+                        <span>Kéo/chạm trực tiếp trên <b>bất kỳ đồ thị nào</b> để thay đổi $x$!</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mathematical Analysis & Interactive Tabs -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <!-- Tab Headers -->
+                <div class="flex flex-wrap border-b border-slate-200 bg-slate-50/80 p-1 gap-1">
+                    <button onclick="switchTab('tab-algebra')" id="btn-tab-algebra" 
+                        class="tab-btn flex-1 py-2.5 px-3 text-xs font-semibold rounded-xl transition text-indigo-700 bg-white shadow-sm flex items-center justify-center gap-1.5 min-w-[130px]">
+                        <i data-lucide="binary" class="w-4 h-4"></i>
+                        1. Biến Đổi Đại Số
+                    </button>
+                    <button onclick="switchTab('tab-econ')" id="btn-tab-econ" 
+                        class="tab-btn flex-1 py-2.5 px-3 text-xs font-semibold rounded-xl transition text-slate-600 hover:text-indigo-600 flex items-center justify-center gap-1.5 min-w-[130px]">
+                        <i data-lucide="coins" class="w-4 h-4"></i>
+                        2. Ý Nghĩa Kinh Tế
+                    </button>
+                    <button onclick="switchTab('tab-calculus')" id="btn-tab-calculus" 
+                        class="tab-btn flex-1 py-2.5 px-3 text-xs font-semibold rounded-xl transition text-slate-600 hover:text-indigo-600 flex items-center justify-center gap-1.5 min-w-[130px]">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        3. Đạo Hàm & Doanh Thu Biên
+                    </button>
+                    <button onclick="switchTab('tab-quiz')" id="btn-tab-quiz" 
+                        class="tab-btn flex-1 py-2.5 px-3 text-xs font-semibold rounded-xl transition text-slate-600 hover:text-indigo-600 flex items-center justify-center gap-1.5 min-w-[130px]">
+                        <i data-lucide="help-circle" class="w-4 h-4"></i>
+                        4. Câu Hỏi Tự Kiểm Tra
+                    </button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="p-5">
+                    
+                    <!-- Tab 1: Algebraic Simplification -->
+                    <div id="tab-algebra" class="tab-content block space-y-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            Rút Gọn Đại Số Của Tỉ Số Thay Đổi Trung Bình
+                        </h3>
+                        <p class="text-sm text-slate-600">
+                            Thực hiện phép tính đại số trực tiếp với $R(x) = -0.005x^2 + 19x$:
+                        </p>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm space-y-3 font-mono">
+                            <div>
+                                <span class="text-slate-500">// Bước 1: Tính R(x+h)</span>
+                                <div class="text-slate-800 font-semibold mt-0.5">
+                                    $R(x+h) = -0.005(x+h)^2 + 19(x+h)$
+                                </div>
+                                <div class="text-slate-700 text-xs mt-0.5">
+                                    $= -0.005(x^2 + 2xh + h^2) + 19x + 19h$
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="text-slate-500">// Bước 2: Tính Mức Tăng Doanh Thu R(x+h) - R(x)</span>
+                                <div class="text-emerald-700 font-semibold mt-0.5">
+                                    $R(x+h) - R(x) = -0.01xh - 0.005h^2 + 19h = h(19 - 0.01x - 0.005h)$
+                                </div>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-200">
+                                <span class="text-slate-500">// Bước 3: Chia cho h để tìm Tốc độ thay đổi trung bình</span>
+                                <div class="text-indigo-600 font-bold text-base mt-0.5">
+                                    $$\frac{R(x+h) - R(x)}{h} = 19 - 0.01x - 0.005h$$
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Value Substitution Formula -->
+                        <div class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-100 text-xs text-indigo-950">
+                            <span class="font-bold text-indigo-900 block mb-1">Thế giá trị hiện tại ($x = <span id="formula-x">500</span>$, $h = <span id="formula-h">200</span>$) vào công thức rút gọn:</span>
+                            <div class="font-mono text-sm font-semibold text-indigo-700 mt-2">
+                                $\text{Tốc độ trung bình} = 19 - 0.01 \cdot (<span id="formula-x-val">500</span>) - 0.005 \cdot (<span id="formula-h-val">200</span>) = 19 - <span id="term1">5.00</span> - <span id="term2">1.00</span> = $ <span id="formula-res" class="text-base font-bold text-indigo-900 underline">13.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Economic Meaning -->
+                    <div id="tab-econ" class="tab-content hidden space-y-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            Ý Nghĩa Thực Tế Trong Quản Lý Doanh Nghiệp
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                                <h4 class="font-bold text-indigo-900 flex items-center gap-1.5">
+                                    <i data-lucide="package" class="w-4 h-4 text-indigo-600"></i>
+                                    Sản lượng tăng thêm $h$ đơn vị
+                                </h4>
+                                <p class="text-slate-600 text-xs leading-relaxed">
+                                    Doanh nghiệp quyết định tăng sản lượng từ mức ban đầu <b class="text-slate-800">$x$ sản phẩm</b> lên <b class="text-slate-800">$x+h$ sản phẩm</b>. $h$ đại diện cho quy mô lô hàng sản xuất thêm.
+                                </p>
+                            </div>
+
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                                <h4 class="font-bold text-emerald-900 flex items-center gap-1.5">
+                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-600"></i>
+                                    Doanh thu tăng thêm $\Delta R$
+                                </h4>
+                                <p class="text-slate-600 text-xs leading-relaxed">
+                                    Toàn bộ lô hàng $h$ sản phẩm thu về thêm tổng cộng <b class="text-slate-800 font-mono" id="econ-deltar">2,600 triệu VNĐ</b>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs space-y-2">
+                            <div class="font-bold text-sm flex items-center gap-2 text-amber-950">
+                                <i data-lucide="lightbulb" class="w-4 h-4 text-amber-600"></i>
+                                Ý Nghĩa Trung Bình Trực Quan:
+                            </div>
+                            <p class="leading-relaxed">
+                                Biểu thức $\frac{R(x+h)-R(x)}{h}$ đo lường <b>Doanh thu trung bình thu được trên MỖI sản phẩm tăng thêm</b> trong toàn bộ lô hàng $h$ sản phẩm.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Transition to Calculus / Marginal Revenue -->
+                    <div id="tab-calculus" class="tab-content hidden space-y-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            Từ Tốc Độ Trung Bình Đến Doanh Thu Biên (Đạo Hàm)
+                        </h3>
+                        <p class="text-sm text-slate-600">
+                            Khi $h \to 0$, tỉ số thay đổi trung bình chính là đạo hàm $R'(x)$ — doanh thu thu được từ sản phẩm tiếp theo!
+                        </p>
+
+                        <div class="bg-slate-900 text-slate-100 p-4 rounded-xl font-mono text-xs space-y-3">
+                            <div class="text-indigo-400 font-bold">
+                                $$\lim_{h \to 0} \frac{R(x+h) - R(x)}{h} = R'(x)$$
+                            </div>
+                            <div class="text-slate-300">
+                                Với $R(x) = -0.005x^2 + 19x$, đạo hàm thu được là:
+                            </div>
+                            <div class="text-purple-400 font-bold text-sm">
+                                $$R'(x) = 19 - 0.01x \quad \text{(Doanh Thu Biên / Marginal Revenue)}$$
+                            </div>
+                        </div>
+
+                        <!-- Comparison Box -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+                                <span class="font-bold text-indigo-900 block mb-1">Tốc độ trung bình (Cát tuyến):</span>
+                                <div class="font-mono text-indigo-700 text-sm font-bold" id="compare-avg">13.00 triệu VNĐ/sp</div>
+                                <div class="text-slate-500 mt-1">Tính cho khoảng tăng $h = <span id="compare-h">200</span>$ sản phẩm.</div>
+                            </div>
+                            <div class="p-3 bg-purple-50 border border-purple-100 rounded-xl">
+                                <span class="font-bold text-purple-900 block mb-1">Doanh thu biên $R'(x)$ (Đồ thị dưới):</span>
+                                <div class="font-mono text-purple-700 text-sm font-bold" id="compare-instant">14.00 triệu VNĐ/sp</div>
+                                <div class="text-slate-500 mt-1">Sự thay đổi tức thời đúng tại mốc sản phẩm thứ $x = <span id="compare-x">500</span>$.</div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-950 text-xs space-y-1">
+                            <div class="font-bold text-purple-900 flex items-center gap-1.5">
+                                <i data-lucide="target" class="w-4 h-4 text-purple-600"></i>
+                                Nhận xét quan sát trực quan trên đồ thị đồng bộ:
+                            </div>
+                            <p>• Khi $R'(x) > 0$ ($x < 1900$), doanh thu $R(x)$ đang trên đà <b>đi lên</b>.</p>
+                            <p>• Khi $R'(x) = 0$ ($x = 1900$), doanh thu $R(x)$ đạt <b>cực đại</b> (đỉnh $18,050$ triệu VNĐ).</p>
+                            <p>• Khi $R'(x) < 0$ ($x > 1900$), doanh thu $R(x)$ bắt đầu <b>sụt giảm</b>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: Interactive Quiz & Challenges -->
+                    <div id="tab-quiz" class="tab-content hidden space-y-4">
+                        <h3 class="text-base font-bold text-slate-800 flex items-center justify-between">
+                            <span>Thách Thức Tự Kiểm Tra Khái Niệm</span>
+                            <span class="text-xs font-normal text-slate-500" id="quiz-score">Điểm: 0 / 2</span>
+                        </h3>
+
+                        <!-- Question 1 -->
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-3" id="q1-box">
+                            <p class="font-semibold text-slate-800 text-sm">
+                                <b>Câu 1:</b> Tại mức sản lượng $x = 1900$, doanh thu biên $R'(1900) = 0$. Điểm tương ứng trên đồ thị $R(x)$ có đặc điểm gì?
+                            </p>
+                            <div class="space-y-1.5">
+                                <button onclick="checkAnswer(1, 'A')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition text-slate-700">
+                                    A. Đồ thị $R(x)$ cắt trục hoành (Doanh thu bằng 0).
+                                </button>
+                                <button onclick="checkAnswer(1, 'B')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition text-slate-700">
+                                    B. Đồ thị $R(x)$ đạt điểm cực đại (Doanh thu đạt giá trị lớn nhất).
+                                </button>
+                                <button onclick="checkAnswer(1, 'C')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition text-slate-700">
+                                    C. Đồ thị $R(x)$ bắt đầu tăng mạnh nhất.
+                                </button>
+                            </div>
+                            <div id="q1-feedback" class="hidden font-medium pt-1 text-xs"></div>
+                        </div>
+
+                        <!-- Question 2 -->
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-3" id="q2-box">
+                            <p class="font-semibold text-slate-800 text-sm">
+                                <b>Câu 2:</b> Về mặt hình học, giá trị tung độ của điểm trên đồ thị $R'(x)$ tại hoành độ $x$ tương ứng với đối tượng nào ở đồ thị $R(x)$ phía trên?
+                            </p>
+                            <div class="space-y-1.5">
+                                <button onclick="checkAnswer(2, 'A')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition text-slate-700">
+                                    A. Độ dốc của đường tiếp tuyến với đồ thị $R(x)$ tại hoành độ $x$.
+                                </button>
+                                <button onclick="checkAnswer(2, 'B')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition text-slate-700">
+                                    B. Diện tích tam giác biến thiên $\Delta R$.
+                                </button>
+                                <button onclick="checkAnswer(2, 'C')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 transition text-slate-700">
+                                    C. Độ dốc của trục hoành.
+                                </button>
+                            </div>
+                            <div id="q2-feedback" class="hidden font-medium pt-1 text-xs"></div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 text-center py-4 text-xs text-slate-500 mt-6">
+        <p>Mô phỏng dạy học tương tác Giải Tích & Ứng Dụng Kinh Tế • Phát triển cho Học sinh / Sinh viên tự khám phá khái niệm toán học.</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Revenue Function R(x) = -0.005*x^2 + 19*x
+        function R(x) {
+            return -0.005 * x * x + 19 * x;
+        }
+
+        // Derivative (Marginal Revenue) R'(x) = 19 - 0.01*x
+        function Rprime(x) {
+            return 19 - 0.01 * x;
+        }
+
+        // Application State
+        let state = {
+            x: 500,
+            h: 200,
+            showRPrime: true,
+            showSecant: true,
+            showTriangle: true,
+            showTangent: true,
+            isPlayingH: false,
+            hDirection: 1,
+            animFrameId: null,
+            isDragging: false,
+            score: 0,
+            answered: {1: false, 2: false}
+        };
+
+        // Canvas & Tooltip elements
+        const canvas = document.getElementById('graph-canvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('canvas-tooltip');
+
+        let mousePos = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+
+            setupEventListeners();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            updateSimulation();
+        });
+
+        function setupEventListeners() {
+            const sliderX = document.getElementById('slider-x');
+            const sliderH = document.getElementById('slider-h');
+            const btnPlayH = document.getElementById('btn-play-h');
+
+            sliderX.addEventListener('input', (e) => {
+                state.x = parseFloat(e.target.value);
+                updateSimulation();
+            });
+
+            sliderH.addEventListener('input', (e) => {
+                state.h = parseFloat(e.target.value);
+                updateSimulation();
+            });
+
+            btnPlayH.addEventListener('click', togglePlayH);
+
+            document.getElementById('chk-show-rprime').addEventListener('change', (e) => {
+                state.showRPrime = e.target.checked;
+                drawGraph();
+            });
+
+            document.getElementById('chk-secant').addEventListener('change', (e) => {
+                state.showSecant = e.target.checked;
+                drawGraph();
+            });
+
+            document.getElementById('chk-triangle').addEventListener('change', (e) => {
+                state.showTriangle = e.target.checked;
+                drawGraph();
+            });
+
+            document.getElementById('chk-tangent').addEventListener('change', (e) => {
+                state.showTangent = e.target.checked;
+                drawGraph();
+            });
+
+            // Interactive mouse/touch dragging directly on canvas
+            canvas.addEventListener('mousedown', handlePointerDown);
+            canvas.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerUp);
+
+            canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+            canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+            window.addEventListener('touchend', handlePointerUp);
+
+            canvas.addEventListener('mouseleave', () => {
+                mousePos = null;
+                tooltip.classList.add('hidden');
+                drawGraph();
+            });
+        }
+
+        function updateXFromCanvasPointer(clientX) {
+            const rect = canvas.getBoundingClientRect();
+            const pointerX = (clientX - rect.left) * window.devicePixelRatio;
+            
+            const marginLeft = 60 * window.devicePixelRatio;
+            const marginRight = 30 * window.devicePixelRatio;
+            const plotW = canvas.width - marginLeft - marginRight;
+            const xMin = 0;
+            const xMax = 3000;
+
+            let newX = xMin + ((pointerX - marginLeft) / plotW) * (xMax - xMin);
+            newX = Math.round(Math.min(Math.max(newX, 100), 2800) / 10) * 10;
+
+            state.x = newX;
+            document.getElementById('slider-x').value = newX;
+            updateSimulation();
+        }
+
+        function handlePointerDown(e) {
+            e.preventDefault();
+            state.isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            updateXFromCanvasPointer(clientX);
+        }
+
+        function handlePointerMove(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = canvas.getBoundingClientRect();
+            mousePos = {
+                x: (clientX - rect.left) * window.devicePixelRatio,
+                y: (clientY - rect.top) * window.devicePixelRatio
+            };
+
+            if (state.isDragging) {
+                updateXFromCanvasPointer(clientX);
+            } else {
+                drawGraph();
+            }
+        }
+
+        function handlePointerUp() {
+            state.isDragging = false;
+        }
+
+        function togglePlayH() {
+            state.isPlayingH = !state.isPlayingH;
+            const btnPlayH = document.getElementById('btn-play-h');
+            const labelPlayH = document.getElementById('label-play-h');
+            const iconPlayH = document.getElementById('icon-play-h');
+
+            if (state.isPlayingH) {
+                btnPlayH.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                btnPlayH.classList.add('bg-amber-600', 'hover:bg-amber-700');
+                labelPlayH.innerText = 'Tạm dừng h';
+                iconPlayH.setAttribute('data-lucide', 'pause');
+                lucide.createIcons();
+                animateH();
+            } else {
+                btnPlayH.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                btnPlayH.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                labelPlayH.innerText = 'Tự động chạy h (1 đến 1000)';
+                iconPlayH.setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+                if (state.animFrameId) {
+                    cancelAnimationFrame(state.animFrameId);
+                }
+            }
+        }
+
+        function animateH() {
+            if (!state.isPlayingH) return;
+
+            let nextH = state.h + state.hDirection * 3;
+            if (nextH >= 1000) {
+                nextH = 1000;
+                state.hDirection = -1;
+            } else if (nextH <= 1) {
+                nextH = 1;
+                state.hDirection = 1;
+            }
+
+            state.h = nextH;
+            document.getElementById('slider-h').value = nextH;
+            updateSimulation();
+
+            state.animFrameId = requestAnimationFrame(animateH);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-indigo-700', 'bg-white', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('text-indigo-700', 'bg-white', 'shadow-sm');
+            activeBtn.classList.remove('text-slate-600');
+        }
+
+        function updateSimulation() {
+            const x = state.x;
+            const h = state.h;
+
+            const rx = R(x);
+            const rxh = R(x + h);
+            const deltaR = rxh - rx;
+            const avgRate = deltaR / h;
+            const instantRate = Rprime(x);
+
+            const fmtNum = (n) => n.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // HUD Monitor Updates
+            document.getElementById('hud-x').innerText = x;
+            document.getElementById('hud-rx').innerText = rx.toLocaleString('vi-VN', { maximumFractionDigits: 0 });
+            document.getElementById('hud-rprime').innerText = fmtNum(instantRate);
+
+            // Controls
+            document.getElementById('val-x').innerText = x;
+            document.getElementById('val-h').innerText = h;
+            document.getElementById('badge-slope').innerText = fmtNum(avgRate);
+
+            // Tab 1 formula values
+            document.getElementById('formula-x').innerText = x;
+            document.getElementById('formula-h').innerText = h;
+            document.getElementById('formula-x-val').innerText = x;
+            document.getElementById('formula-h-val').innerText = h;
+            
+            const term1Val = 0.01 * x;
+            const term2Val = 0.005 * h;
+            document.getElementById('term1').innerText = term1Val.toFixed(2);
+            document.getElementById('term2').innerText = term2Val.toFixed(2);
+            document.getElementById('formula-res').innerText = fmtNum(avgRate);
+
+            // Tab 2 & 3 text updates
+            document.getElementById('econ-deltar').innerText = fmtNum(deltaR) + ' triệu VNĐ';
+            document.getElementById('compare-avg').innerText = fmtNum(avgRate) + ' triệu VNĐ/sp';
+            document.getElementById('compare-instant').innerText = fmtNum(instantRate) + ' triệu VNĐ/sp';
+            document.getElementById('compare-x').innerText = x;
+            document.getElementById('compare-h').innerText = h;
+
+            drawGraph();
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            drawGraph();
+        }
+
+        function drawGraph() {
+            if (!canvas.width || !canvas.height) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const dpr = window.devicePixelRatio;
+
+            ctx.save();
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+
+            const margin = { top: 25 * dpr, right: 30 * dpr, bottom: 30 * dpr, left: 60 * dpr };
+            const plotW = width - margin.left - margin.right;
+            
+            // Layout split: Top plot R(x), Bottom plot R'(x) if enabled
+            const showSubPlot = state.showRPrime;
+            const topPlotH = showSubPlot ? (height - margin.top - margin.bottom) * 0.62 : (height - margin.top - margin.bottom);
+            const bottomPlotTop = margin.top + topPlotH + 25 * dpr;
+            const bottomPlotH = showSubPlot ? height - margin.bottom - bottomPlotTop : 0;
+
+            const xMin = 0;
+            const xMax = 3000;
+            const yMinR = 0;
+            const yMaxR = 20000;
+
+            const yMinRPrime = -15;
+            const yMaxRPrime = 25;
+
+            // Mapping helpers
+            const toCanvasX = (xVal) => margin.left + ((xVal - xMin) / (xMax - xMin)) * plotW;
+            const toCanvasY_R = (yVal) => margin.top + topPlotH - ((yVal - yMinR) / (yMaxR - yMinR)) * topPlotH;
+            const toCanvasY_RPrime = (yVal) => bottomPlotTop + bottomPlotH - ((yVal - yMinRPrime) / (yMaxRPrime - yMinRPrime)) * bottomPlotH;
+
+            const fromCanvasX = (cx) => xMin + ((cx - margin.left) / plotW) * (xMax - xMin);
+
+            // 1. Gridlines & Axes for R(x)
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1 * dpr;
+
+            // Vertical Gridlines (Shared)
+            ctx.fillStyle = '#64748b';
+            ctx.font = `${10 * dpr}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+
+            for (let xVal = 0; xVal <= xMax; xVal += 500) {
+                const cx = toCanvasX(xVal);
+                ctx.beginPath();
+                ctx.moveTo(cx, margin.top);
+                ctx.lineTo(cx, margin.top + topPlotH);
+                if (showSubPlot) {
+                    ctx.lineTo(cx, bottomPlotTop + bottomPlotH);
+                }
+                ctx.stroke();
+
+                // X labels on bottom
+                const xLabelY = showSubPlot ? bottomPlotTop + bottomPlotH + 14 * dpr : margin.top + topPlotH + 14 * dpr;
+                ctx.fillText(xVal, cx, xLabelY);
+            }
+
+            // Top Plot Y Gridlines & Axis
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let yVal = 0; yVal <= yMaxR; yVal += 5000) {
+                const cy = toCanvasY_R(yVal);
+                ctx.beginPath();
+                ctx.moveTo(margin.left, cy);
+                ctx.lineTo(width - margin.right, cy);
+                ctx.stroke();
+
+                ctx.fillText(yVal.toLocaleString(), margin.left - 6 * dpr, cy);
+            }
+
+            // Top Box Axes Border
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.2 * dpr;
+            ctx.strokeRect(margin.left, margin.top, plotW, topPlotH);
+
+            // Label for Top Plot
+            ctx.fillStyle = '#334155';
+            ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText('Doanh thu R(x) (triệu VNĐ)', margin.left + 8 * dpr, margin.top + 14 * dpr);
+
+            // Plot Revenue Curve R(x)
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 2.5 * dpr;
+            ctx.beginPath();
+            for (let px = 0; px <= plotW; px += 2) {
+                const xVal = xMin + (px / plotW) * (xMax - xMin);
+                const yVal = R(xVal);
+                const cx = toCanvasX(xVal);
+                const cy = toCanvasY_R(yVal);
+
+                if (px === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
+
+            // Current state variables
+            const x = state.x;
+            const h = state.h;
+            const rx = R(x);
+            const rxh = R(x + h);
+
+            const cxA = toCanvasX(x);
+            const cyA = toCanvasY_R(rx);
+            const cxB = toCanvasX(x + h);
+            const cyB = toCanvasY_R(rxh);
+
+            // Δx, ΔR Right Triangle
+            if (state.showTriangle) {
+                ctx.save();
+                ctx.strokeStyle = '#059669';
+                ctx.lineWidth = 1.8 * dpr;
+                ctx.setLineDash([4 * dpr, 4 * dpr]);
+                ctx.beginPath();
+                ctx.moveTo(cxA, cyA);
+                ctx.lineTo(cxB, cyA);
+                ctx.stroke();
+
+                ctx.strokeStyle = '#d97706';
+                ctx.beginPath();
+                ctx.moveTo(cxB, cyA);
+                ctx.lineTo(cxB, cyB);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.1)';
+                ctx.beginPath();
+                ctx.moveTo(cxA, cyA);
+                ctx.lineTo(cxB, cyA);
+                ctx.lineTo(cxB, cyB);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#047857';
+                ctx.font = `bold ${10 * dpr}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText(`h = ${h}`, (cxA + cxB) / 2, cyA + 12 * dpr);
+                ctx.restore();
+            }
+
+            // Secant Line AB
+            if (state.showSecant) {
+                const k = (rxh - rx) / h;
+                const secX1 = 0;
+                const secY1 = rx + k * (secX1 - x);
+                const secX2 = xMax;
+                const secY2 = rx + k * (secX2 - x);
+
+                ctx.strokeStyle = '#059669';
+                ctx.lineWidth = 2 * dpr;
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(secX1), toCanvasY_R(secY1));
+                ctx.lineTo(toCanvasX(secX2), toCanvasY_R(secY2));
+                ctx.stroke();
+            }
+
+            // Tangent Line at x
+            if (state.showTangent) {
+                const kTan = Rprime(x);
+                const tanX1 = 0;
+                const tanY1 = rx + kTan * (tanX1 - x);
+                const tanX2 = xMax;
+                const tanY2 = rx + kTan * (tanX2 - x);
+
+                ctx.strokeStyle = '#9333ea';
+                ctx.lineWidth = 1.8 * dpr;
+                ctx.setLineDash([5 * dpr, 4 * dpr]);
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(tanX1), toCanvasY_R(tanY1));
+                ctx.lineTo(toCanvasX(tanX2), toCanvasY_R(tanY2));
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Points A and B on R(x)
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(cxA, cyA, 5.5 * dpr, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2 * dpr;
+            ctx.stroke();
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
+            ctx.textAlign = 'right';
+            ctx.fillText(`A(${x}, ${rx.toFixed(0)})`, cxA - 8 * dpr, cyA - 8 * dpr);
+
+            ctx.fillStyle = '#0284c7';
+            ctx.beginPath();
+            ctx.arc(cxB, cyB, 5.5 * dpr, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.textAlign = 'left';
+            ctx.fillText(`B(${x + h}, ${rxh.toFixed(0)})`, cxB + 8 * dpr, cyB - 8 * dpr);
+
+            // 2. Bottom Plot: Marginal Revenue R'(x)
+            if (showSubPlot) {
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 1.2 * dpr;
+                ctx.strokeRect(margin.left, bottomPlotTop, plotW, bottomPlotH);
+
+                // Zero horizontal line R'(x) = 0
+                const cyZero = toCanvasY_RPrime(0);
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5 * dpr;
+                ctx.beginPath();
+                ctx.moveTo(margin.left, cyZero);
+                ctx.lineTo(width - margin.right, cyZero);
+                ctx.stroke();
+
+                // Y Gridlines & Labels for R'(x)
+                ctx.fillStyle = '#64748b';
+                ctx.font = `${10 * dpr}px Inter, sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                for (let yVal = -10; yVal <= 20; yVal += 10) {
+                    const cy = toCanvasY_RPrime(yVal);
+                    ctx.fillText(yVal, margin.left - 6 * dpr, cy);
+                }
+
+                // Plot Line R'(x) = 19 - 0.01x
+                const cxRPrimeStart = toCanvasX(0);
+                const cyRPrimeStart = toCanvasY_RPrime(Rprime(0));
+                const cxRPrimeEnd = toCanvasX(3000);
+                const cyRPrimeEnd = toCanvasY_RPrime(Rprime(3000));
+
+                ctx.strokeStyle = '#9333ea';
+                ctx.lineWidth = 2.5 * dpr;
+                ctx.beginPath();
+                ctx.moveTo(cxRPrimeStart, cyRPrimeStart);
+                ctx.lineTo(cxRPrimeEnd, cyRPrimeEnd);
+                ctx.stroke();
+
+                // Title for Bottom Subplot
+                ctx.fillStyle = '#6b21a8';
+                ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
+                ctx.textAlign = 'left';
+                ctx.fillText('Doanh Thu Biên R\'(x) (triệu VNĐ/sp)', margin.left + 8 * dpr, bottomPlotTop + 14 * dpr);
+
+                // Synchronized Point on R'(x)
+                const rPrimeVal = Rprime(x);
+                const cyRPrimePoint = toCanvasY_RPrime(rPrimeVal);
+
+                ctx.fillStyle = '#9333ea';
+                ctx.beginPath();
+                ctx.arc(cxA, cyRPrimePoint, 6 * dpr, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2 * dpr;
+                ctx.stroke();
+
+                // Point Label on R'(x)
+                ctx.fillStyle = '#581c87';
+                ctx.font = `bold ${11 * dpr}px Inter, sans-serif`;
+                ctx.textAlign = 'left';
+                ctx.fillText(`P'(${x}, ${rPrimeVal.toFixed(2)})`, cxA + 8 * dpr, cyRPrimePoint - 6 * dpr);
+
+                // Vertical Synchronized Line connecting R(x) and R'(x)
+                ctx.strokeStyle = '#a855f7';
+                ctx.lineWidth = 1.5 * dpr;
+                ctx.setLineDash([3 * dpr, 3 * dpr]);
+                ctx.beginPath();
+                ctx.moveTo(cxA, cyA);
+                ctx.lineTo(cxA, cyRPrimePoint);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Hover crosshair and tooltip
+            if (mousePos) {
+                const hoverX = Math.min(Math.max(fromCanvasX(mousePos.x), 0), xMax);
+                const hoverY_R = R(hoverX);
+                const hoverY_RPrime = Rprime(hoverX);
+
+                const hcx = toCanvasX(hoverX);
+
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 1 * dpr;
+                ctx.setLineDash([3 * dpr, 3 * dpr]);
+                
+                ctx.beginPath();
+                ctx.moveTo(hcx, margin.top);
+                ctx.lineTo(hcx, showSubPlot ? bottomPlotTop + bottomPlotH : margin.top + topPlotH);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Position Tooltip Element
+                tooltip.style.left = `${(hcx / dpr) + 12}px`;
+                tooltip.style.top = `${(mousePos.y / dpr) - 20}px`;
+                tooltip.innerHTML = `<b>x = ${hoverX.toFixed(0)} sp</b><br>R(x) = ${hoverY_R.toFixed(1)} triệu<br>R'(x) = ${hoverY_RPrime.toFixed(2)} triệu/sp`;
+                tooltip.classList.remove('hidden');
+            }
+
+            ctx.restore();
+        }
+
+        function checkAnswer(qNum, choice) {
+            if (state.answered[qNum]) return;
+            state.answered[qNum] = true;
+
+            const feedbackEl = document.getElementById(`q${qNum}-feedback`);
+            feedbackEl.classList.remove('hidden');
+
+            if (qNum === 1) {
+                if (choice === 'B') {
+                    feedbackEl.className = 'font-semibold pt-1 text-xs text-emerald-600 flex items-center gap-1';
+                    feedbackEl.innerHTML = ' chính xác! Khi R\'(x) = 0, doanh thu R(x) đạt đỉnh cực đại tại 18,050 triệu VNĐ.';
+                    state.score += 1;
+                } else {
+                    feedbackEl.className = 'font-semibold pt-1 text-xs text-rose-600 flex items-center gap-1';
+                    feedbackEl.innerHTML = '✘ Chưa đúng! Đáp án đúng là B. Khi đạo hàm bằng 0, hàm số R(x) đạt cực đại.';
+                }
+            } else if (qNum === 2) {
+                if (choice === 'A') {
+                    feedbackEl.className = 'font-semibold pt-1 text-xs text-emerald-600 flex items-center gap-1';
+                    feedbackEl.innerHTML = ' chính xác! Tung độ của R\'(x) chính bằng hệ số góc (độ dốc) tiếp tuyến của R(x).';
+                    state.score += 1;
+                } else {
+                    feedbackEl.className = 'font-semibold pt-1 text-xs text-rose-600 flex items-center gap-1';
+                    feedbackEl.innerHTML = '✘ Chưa đúng! Đáp án đúng là A. Đạo hàm R\'(x) chính là độ dốc đường tiếp tuyến của R(x).';
+                }
+            }
+
+            document.getElementById('quiz-score').innerText = `Điểm: ${state.score} / 2`;
+        }
+    </script>
+</body>
+</html>
